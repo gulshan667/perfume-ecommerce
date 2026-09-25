@@ -69,6 +69,15 @@ function SearchResults() {
   const productsPerPage = 6;
   const [showSubscribe, setShowSubscribe] = useState(false);
   const [showSubscribed, setShowSubscribed] = useState(false);
+  const [cartItems, setCartItems] = useState<any[]>([]);
+
+  const [loginuser, setloginuser] = useState({
+    id: "",
+    name: "",
+    email: "",
+    cart: [],
+  });
+
   ///api
   useEffect(() => {
     const api = async () => {
@@ -164,6 +173,203 @@ function SearchResults() {
     startIndex + productsPerPage,
   );
 
+  //-------------
+  useEffect(() => {
+    const getUser = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          "http://localhost:5047/api/Perfume2Users/me",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        setloginuser({
+          id: response.data.id,
+          name: response.data.name,
+          email: response.data.email,
+          cart: response.data.cart || [],
+        });
+        setCartItems(response.data.cart || []);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    getUser();
+  }, []);
+
+  //------------------------
+ const handleAddToCart = async (productId: number) => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    if (!loginuser.id) {
+      alert("Please login first.");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5047/api/Perfume2Users/add-cart",
+        {
+          userId: Number(loginuser.id),
+          productId: productId,
+          quantity: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      console.log("Cart added:", response.data);
+
+      // Update UI immediately
+      setCartItems((prev) => {
+        const existing = prev.find((item) => item.productId === productId);
+
+        if (existing) {
+          return prev.map((item) =>
+            item.productId === productId
+              ? {
+                  ...item,
+                  quantity: item.quantity + 1,
+                }
+              : item,
+          );
+        }
+
+        return [
+          ...prev,
+          {
+            id: response.data.id,
+            userId: Number(loginuser.id),
+            productId: productId,
+            quantity: 1,
+          },
+        ];
+      });
+
+      // Update loginuser.cart also
+      setloginuser((prev) => ({
+        ...prev,
+        cart: [
+          ...prev.cart.filter((item: any) => item.productId !== productId),
+          {
+            id: response.data.id,
+            userId: Number(loginuser.id),
+            productId: productId,
+            quantity: 1,
+          },
+        ],
+      }));
+    } catch (error) {
+      console.error("Add to cart error:", error);
+    }
+  };
+  const handleIncrease = async (Pid: number) => {
+    try {
+      await axios.patch(
+        `http://localhost:5047/api/Perfume2Users/cart-increase-quantity?id=${loginuser.id}&pId=${Pid}`,
+      );
+
+      setCartItems((prevCart) =>
+        prevCart.map((item) =>
+          Number(item.productId) === Number(Pid)
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
+        ),
+      );
+
+      setloginuser((prev) => ({
+        ...prev,
+        cart: prev.cart.map((item: any) =>
+          Number(item.productId) === Number(Pid)
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
+        ),
+      }));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handleDecrease = async (Pid: number) => {
+    const cartItem = cartItems.find(
+      (item) => Number(item.productId) === Number(Pid),
+    );
+
+    if (!cartItem || cartItem.quantity <= 1) {
+      return;
+    }
+
+    try {
+      await axios.patch(
+        `http://localhost:5047/api/Perfume2Users/cart-decrease-quantity?id=${loginuser.id}&pId=${Pid}`,
+      );
+
+      setCartItems((prevCart) =>
+        prevCart.map((item) =>
+          Number(item.productId) === Number(Pid)
+            ? { ...item, quantity: item.quantity - 1 }
+            : item,
+        ),
+      );
+
+      setloginuser((prev) => ({
+        ...prev,
+        cart: prev.cart.map((item: any) =>
+          Number(item.productId) === Number(Pid)
+            ? { ...item, quantity: item.quantity - 1 }
+            : item,
+        ),
+      }));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleDelete = async (Pid: number) => {
+    const cartItem = cartItems.find(
+      (item) => Number(item.productId) === Number(Pid),
+    );
+
+    if (!cartItem) {
+      return;
+    }
+
+    try {
+      await axios.delete(
+        `http://localhost:5047/api/Perfume2Users/cart/${loginuser.id}/${Pid}`,
+      );
+
+      setCartItems((prevCart) =>
+        prevCart.filter((item) => Number(item.productId) !== Number(Pid)),
+      );
+
+      setloginuser((prev) => ({
+        ...prev,
+        cart: prev.cart.filter(
+          (item: any) => Number(item.productId) !== Number(Pid),
+        ),
+      }));
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <div className="search-page">
       <style>{`
@@ -479,6 +685,41 @@ function SearchResults() {
   letter-spacing: 4px;
 }
 
+.quantity-btn {
+  width: 36px;
+  height: 100%;
+  border: 0 !important;
+  background: transparent !important;
+  color: #c5a46d !important;
+  font-size: 18px !important;
+  font-weight: 400 !important;
+  padding: 0 !important;
+  cursor: pointer;
+  transition: .3s;
+}
+
+.quantity-control {
+  flex: 1;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #333;
+  background: #0b0b0b;
+  overflow: hidden;
+}
+  .quantity-btn:hover {
+  background: #c5a46d !important;
+  color: #000 !important;
+}
+
+.quantity-number {
+  flex: 1;
+  text-align: center;
+  color: #eee;
+  font-size: 12px;
+  font-weight: 600;
+}
 
 /* TEXT */
 
@@ -1334,18 +1575,29 @@ function SearchResults() {
           </div>
 
           <div className="d-flex">
-            <IconButton className="header-icon d-none d-md-flex">
-              <PersonIcon />
-            </IconButton>
+           
 
-            <IconButton className="header-icon d-none d-md-flex">
+            <IconButton className="header-icon d-none d-md-flex" 
+            onClick={() => navigate("/wishlist")}>
               <FavoriteBorderIcon />
             </IconButton>
 
-            <IconButton className="header-icon">
-              <Badge badgeContent={cart} color="warning">
-                <ShoppingBagOutlinedIcon />
-              </Badge>
+            <IconButton
+              className="header-icon"
+              onClick={() => navigate("/cart")}
+            >
+              {loginuser.cart.length == 0 ? (
+                <Badge color="warning">
+                  <ShoppingBagOutlinedIcon />
+                </Badge>
+              ) : (
+                <Badge
+                  badgeContent={loginuser.cart.length || ""}
+                  color="warning"
+                >
+                  <ShoppingBagOutlinedIcon />
+                </Badge>
+              )}
             </IconButton>
           </div>
         </Toolbar>
@@ -1580,7 +1832,11 @@ function SearchResults() {
             <div className="col-lg-9">
               {filteredProducts.length > 0 ? (
                 <div className="row g-4">
-                  {paginatedProducts.map((product, index) => (
+                  {paginatedProducts.map((product, index) =>{ 
+                    const cartItem = cartItems.find(
+                (item) => Number(item.productId) === Number(product.id),
+              );
+                    return(
                     <div className="col-6 col-md-6 col-xl-4" key={index}>
                       <div className="product-card">
                         <div className="product-image">
@@ -1627,11 +1883,56 @@ function SearchResults() {
                               </span>
                             )}
                           </div>
+                          {/* add to cart <----------------->*/}
 
                           <div className="product-buttons">
-                            <button className="cart-btn" onClick={addCart}>
+                            
+                            {/* { cartItem ?() :()} */}
+                            {/* <button className="cart-btn" onClick={addCart}>
                               ADD TO CART
+                            </button> */}
+                            {/* add to cart <----------------->*/}
+                          
+                           {cartItem ? (
+                          <div className="quantity-control">
+                            {cartItem.quantity == 1 ? (
+                              <button
+                                className="quantity-btn"
+                          onClick={() => handleDelete(product.id)}
+                              >
+                                −
+                              </button>
+                            ) : (
+                              <button
+                                className="quantity-btn"
+                           onClick={() => handleDecrease(product.id)}
+
+                              >
+                                −
+                              </button>
+                            )}
+
+                            <span className="quantity-number">
+                              {cartItem.quantity}
+                            </span>
+
+                            <button
+                              className="quantity-btn"
+                           onClick={() => handleIncrease(product.id)}
+
+                            >
+                              +
                             </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="cart-btn"
+                            onClick={() => handleAddToCart(product.id)}
+                          >
+                            ADD TO CART
+                          </button>
+                        )}
+
 
                             <button
                               className="buy-btn"
@@ -1643,7 +1944,8 @@ function SearchResults() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                   {totalPages > 1 && (
                     <>
                       <div className="premium-pagination-wrapper">
@@ -1879,20 +2181,18 @@ function SearchResults() {
               <div className="footer-newsletter">
                 <input type="email" placeholder="Your email address" />
 
-                { showSubscribed? <button
-                  className="noir-subscribe-btn disbaled"
-                >
-                  SUBSCRIBED
-                </button>:
-                <button
-                  onClick={() => setShowSubscribe(true)}
-                  className="noir-subscribe-btn"
-                >
-                  SUBSCRIBE
-                </button>
-                }
-
-
+                {showSubscribed ? (
+                  <button className="noir-subscribe-btn disbaled">
+                    SUBSCRIBED
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowSubscribe(true)}
+                    className="noir-subscribe-btn"
+                  >
+                    SUBSCRIBE
+                  </button>
+                )}
               </div>
               {showSubscribe && (
                 <div className="noir-subscribe-overlay">

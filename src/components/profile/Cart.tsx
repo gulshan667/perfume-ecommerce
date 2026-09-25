@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
@@ -10,116 +10,145 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import axios from "axios";
 
-interface CartItem {
-  id: number;
-  title: string;
-  brand: string;
-  price: number;
-  oldPrice?: number;
-  imageUrl: string;
-  sizeML: number;
+
+ type cartItem = {
+  id:number;
+  userId:number;
+  productId: number;
   quantity: number;
-}
+};
 
 function Cart() {
   const navigate = useNavigate();
 
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: 1,
-      title: "Noir Intense Eau De Parfum",
-      brand: "NOIR",
-      price: 89,
-      oldPrice: 109,
-      imageUrl:
-        "https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=700&q=90",
-      sizeML: 100,
-      quantity: 1,
-    },
-    {
-      id: 2,
-      title: "Velvet Rose Signature",
-      brand: "VELVET",
-      price: 75,
-      oldPrice: 95,
-      imageUrl:
-        "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=700&q=90",
-      sizeML: 80,
-      quantity: 2,
-    },
-    {
-      id: 2,
-      title: "Velvet Rose Signature",
-      brand: "VELVET",
-      price: 75,
-      oldPrice: 95,
-      imageUrl:
-        "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=700&q=90",
-      sizeML: 80,
-      quantity: 2,
-    },
-    {
-      id: 2,
-      title: "Velvet Rose Signature",
-      brand: "VELVET",
-      price: 75,
-      oldPrice: 95,
-      imageUrl:
-        "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=700&q=90",
-      sizeML: 80,
-      quantity: 2,
-    },
-    {
-      id: 2,
-      title: "Velvet Rose Signature",
-      brand: "VELVET",
-      price: 75,
-      oldPrice: 95,
-      imageUrl:
-        "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=700&q=90",
-      sizeML: 80,
-      quantity: 2,
-    },
-  ]);
+ 
 
   const [coupon, setCoupon] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
+  ////<------------------get cart from api----------------->
+   
+  
+  const [cart, setcart] = useState<cartItem[]>([]);
+  
+     useEffect(() => {
+      const getUser = async () => {
+        const token = localStorage.getItem("token");
+  
+        if (!token) {
+          return;
+        }
+  
+        try {
+          const response = await axios.get(
+            "http://localhost:5047/api/Perfume2Users/me",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          );
+  
+            setcart(response.data.cart);
+        } catch (error) {
+          console.log(error);
+        }
+      };
+  
+      getUser();
+    }, []);
+  
+    console.log(cart)
+  
+    //---------------GEt product by id---------->
+    const [products, setProducts] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const getProducts = async () => {
+      try {
+        const responses = await Promise.all(
+          cart.map((item) =>
+            axios.get(
+              `http://localhost:5047/api/Perfume2/${item.productId}`
+            )
+          )
+        );
+  
+        const productData = responses.map((response, index) => ({
+          ...responses[index].data,
+          quantity: cart[index].quantity,
+        }));
+  
+        setProducts(productData);
+  
+      } catch (error) {
+        console.log(error);
+      }
+    };
+  
+    if (cart.length > 0) {
+      getProducts();
+    }
+  }, [cart]);
 
-  const updateQuantity = (
-    id: number,
-    type: "increase" | "decrease"
-  ) => {
-    setCartItems((items) =>
-      items.map((item) => {
-        if (item.id !== id) return item;
-
-        const newQuantity =
-          type === "increase"
-            ? item.quantity + 1
-            : item.quantity - 1;
-
-        return {
-          ...item,
-          quantity: Math.max(1, newQuantity),
-        };
-      })
+const handleDecrease =async (Pid : number)=>{
+  try {
+    await axios.patch(`http://localhost:5047/api/Perfume2Users/cart-decrease-quantity?id=${cart[0].userId}&pId=${Pid}`);
+    // Update quantity  on screen
+    setcart(prevCart =>
+      prevCart.map(item =>
+        item.productId === Pid
+          ? { ...item, quantity: item.quantity - 1 }
+          : item
+      )
     );
-  };
 
-  const removeItem = (id: number) => {
-    setCartItems((items) =>
-      items.filter((item) => item.id !== id)
+    setProducts(prevProducts =>
+      prevProducts.map(item =>
+        item.id === Pid
+          ? { ...item, quantity: item.quantity - 1 }
+          : item
+      )
     );
-  };
+  } catch (error) {
+    console.log(error)
+  }
+}
 
-  const subtotal = cartItems.reduce(
+const handleIncrease =async (Pid)=>{
+  try {
+    await axios.patch(`http://localhost:5047/api/Perfume2Users/cart-increase-quantity?id=${cart[0].userId}&pId=${Pid}`);
+    // Update quantity immediately on screen
+    setcart(prevCart =>
+      prevCart.map(item =>
+        item.productId === Pid
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      )
+    );
+
+    setProducts(prevProducts =>
+      prevProducts.map(item =>
+        item.id === Pid
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      )
+    );
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+ 
+
+  const subtotal = products.reduce(
     (total, item) =>
       total + item.price * item.quantity,
     0
   );
 
-  const shipping = subtotal >= 100 ? 0 : 8;
+  const shipping =subtotal==0? 0 : subtotal >= 100  ? 0 : 8;
 
   const discount = couponApplied
     ? Math.round(subtotal * 0.1)
@@ -143,6 +172,25 @@ function Cart() {
     }
   };
 
+  const handleDelete = async (PId:number)=>{
+     try {
+      axios.delete(`http://localhost:5047/api/Perfume2Users/cart/${cart[0].userId}/${PId}`);
+
+      // Remove immediately from cart state
+    setcart(prevCart =>
+      prevCart.filter(item => item.productId !== PId)
+    );
+
+    // Remove immediately from products state
+    setProducts(prevProducts =>
+      prevProducts.filter(product => product.id !== PId)
+    );
+     } catch (error) {
+      console.log(error)
+     }
+  }
+
+  
   return (
     <div className="cart-page">
       <style>{`
@@ -700,7 +748,7 @@ function Cart() {
 
         .summary-total-price {
           color: #c5a46d;
-          font-family: Georgia, serif;
+          font-family: "Cormorant Garamond", serif;
           font-size: 28px;
         }
 
@@ -1042,7 +1090,7 @@ function Cart() {
       <main className="cart-main">
         <div className="cart-container">
 
-          {cartItems.length === 0 ? (
+          {cart.length === 0 ? (
             <div className="empty-cart">
 
               <div className="empty-icon">
@@ -1082,17 +1130,14 @@ function Cart() {
                   </h2>
 
                   <div className="cart-count">
-                    {cartItems.reduce(
-                      (total, item) =>
-                        total + item.quantity,
-                      0
-                    )}{" "}
+                    {products.length}
+                    {" "}
                     ITEMS
                   </div>
 
                 </div>
 
-                {cartItems.map((item) => (
+                {products.map((item) => (
                   <div
                     className="cart-item"
                     key={item.id}
@@ -1141,27 +1186,30 @@ function Cart() {
 
                         <div className="quantity-box">
 
+                            {item.quantity<=1?<button
+                            disabled
+                          >
+                            −
+                          </button> 
+                          : 
                           <button
                             onClick={() =>
-                              updateQuantity(
-                                item.id,
-                                "decrease"
-                              )
+                              handleDecrease(item.id)
+                              
                             }
                           >
                             −
-                          </button>
+                          </button> }
+                          
 
                           <span className="quantity-number">
                             {item.quantity}
                           </span>
 
                           <button
-                            onClick={() =>
-                              updateQuantity(
-                                item.id,
-                                "increase"
-                              )
+                           onClick={() =>
+                              handleIncrease(item.id)
+                              
                             }
                           >
                             +
@@ -1188,7 +1236,7 @@ function Cart() {
                         className="item-action-btn delete"
                         title="Remove item"
                         onClick={() =>
-                          removeItem(item.id)
+                          handleDelete(item.id)
                         }
                       >
                         <DeleteIcon
@@ -1229,7 +1277,7 @@ function Cart() {
 
                 <div className="summary-row">
                   <span>Subtotal</span>
-                  <strong>$ {subtotal}</strong>
+                  <strong>$ {subtotal.toFixed(2)}</strong>
                 </div>
 
                 <div className="summary-row">
@@ -1318,7 +1366,7 @@ function Cart() {
                   </span>
 
                   <span className="summary-total-price">
-                    $ {total}
+                    $ {total.toFixed(2)}
                   </span>
 
                 </div>

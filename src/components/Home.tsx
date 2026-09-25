@@ -16,6 +16,7 @@ import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import FavoriteIcon from "@mui/icons-material/Favorite";
 import MenuIcon from "@mui/icons-material/Menu";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
@@ -55,6 +56,7 @@ function Home() {
   const [perfumes, setperfumes] = useState<Perfume[]>([]);
   const [activeTab, setActiveTab] = useState("Latest Products");
   const [cart, setCart] = useState(0);
+  const [wishlistItems, setWishlistItems] = useState<any[]>([]);
 
   // Mobile drawer
   const [drawer, setDrawer] = useState(false);
@@ -68,7 +70,6 @@ function Home() {
   const [subscribed, setSubscribed] = useState(false);
   const [isLoggedIn, setisLoggedIn] = useState(false);
   const navigate = useNavigate();
-  const [addedProducts, setAddedProducts] = useState<number[]>([]);
 
   const [cartItems, setCartItems] = useState<any[]>([]);
 
@@ -76,6 +77,7 @@ function Home() {
     id: "",
     name: "",
     email: "",
+    cart: [],
   });
 
   useEffect(() => {
@@ -107,7 +109,10 @@ function Home() {
           id: response.data.id,
           name: response.data.name,
           email: response.data.email,
+          cart: response.data.cart || [],
         });
+        setCartItems(response.data.cart || []);
+        setWishlistItems(response.data.wishlist || []);
       } catch (error) {
         console.log(error);
       }
@@ -115,17 +120,6 @@ function Home() {
 
     getUser();
   }, []);
-
-  // console.log(loginuser)
-  //   useEffect(()=>{
-  //    const responce= axios.get("http://localhost:5047/api/Perfume2Users/me", {
-  //   headers: {
-  //     Authorization: `Bearer ${localStorage.getItem("token")}`
-  //   }
-  // });
-
-  // console.log(res)
-  //   },[])
 
   /* =========================================
      NEWSLETTER
@@ -257,9 +251,9 @@ function Home() {
      CART
   ========================================= */
 
-  const addCart = () => {
-    setCart((value) => value + 1);
-  };
+  // const addCart = () => {
+  //   setCart((value) => value + 1);
+  // };
 
   /* =========================================
      PRODUCT FILTER
@@ -284,30 +278,225 @@ function Home() {
     navigate(path);
   };
 
-  const handleAddToCart = (productId: number) => {
-    setAddedProducts((prev) => [...prev, productId]);
-  };
+  const handleAddToCart = async (productId: number) => {
+    const token = localStorage.getItem("token");
 
-  useEffect(() => {
-  const getCart = async () => {
-    if (!loginuser.id) return;
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    if (!loginuser.id) {
+      alert("Please login first.");
+      return;
+    }
 
     try {
-      const response = await axios.get(
-        `http://localhost:5047/api/Cart/user/${loginuser.id}`
+      const response = await axios.post(
+        "http://localhost:5047/api/Perfume2Users/add-cart",
+        {
+          userId: Number(loginuser.id),
+          productId: productId,
+          quantity: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
 
-      setCartItems(response.data);
+      console.log("Cart added:", response.data);
+
+      // Update UI immediately
+      setCartItems((prev) => {
+        const existing = prev.find((item) => item.productId === productId);
+
+        if (existing) {
+          return prev.map((item) =>
+            item.productId === productId
+              ? {
+                  ...item,
+                  quantity: item.quantity + 1,
+                }
+              : item,
+          );
+        }
+
+        return [
+          ...prev,
+          {
+            id: response.data.id,
+            userId: Number(loginuser.id),
+            productId: productId,
+            quantity: 1,
+          },
+        ];
+      });
+
+      // Update loginuser.cart also
+      setloginuser((prev) => ({
+        ...prev,
+        cart: [
+          ...prev.cart.filter((item: any) => item.productId !== productId),
+          {
+            id: response.data.id,
+            userId: Number(loginuser.id),
+            productId: productId,
+            quantity: 1,
+          },
+        ],
+      }));
+    } catch (error) {
+      console.error("Add to cart error:", error);
+    }
+  };
+  const handleIncrease = async (Pid: number) => {
+    try {
+      await axios.patch(
+        `http://localhost:5047/api/Perfume2Users/cart-increase-quantity?id=${loginuser.id}&pId=${Pid}`,
+      );
+
+      setCartItems((prevCart) =>
+        prevCart.map((item) =>
+          Number(item.productId) === Number(Pid)
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
+        ),
+      );
+
+      setloginuser((prev) => ({
+        ...prev,
+        cart: prev.cart.map((item: any) =>
+          Number(item.productId) === Number(Pid)
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
+        ),
+      }));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handleDecrease = async (Pid: number) => {
+    const cartItem = cartItems.find(
+      (item) => Number(item.productId) === Number(Pid),
+    );
+
+    if (!cartItem || cartItem.quantity <= 1) {
+      return;
+    }
+
+    try {
+      await axios.patch(
+        `http://localhost:5047/api/Perfume2Users/cart-decrease-quantity?id=${loginuser.id}&pId=${Pid}`,
+      );
+
+      setCartItems((prevCart) =>
+        prevCart.map((item) =>
+          Number(item.productId) === Number(Pid)
+            ? { ...item, quantity: item.quantity - 1 }
+            : item,
+        ),
+      );
+
+      setloginuser((prev) => ({
+        ...prev,
+        cart: prev.cart.map((item: any) =>
+          Number(item.productId) === Number(Pid)
+            ? { ...item, quantity: item.quantity - 1 }
+            : item,
+        ),
+      }));
     } catch (error) {
       console.log(error);
     }
   };
 
-  getCart();
-}, [loginuser.id]);
+  const handleDelete = async (Pid: number) => {
+    const cartItem = cartItems.find(
+      (item) => Number(item.productId) === Number(Pid),
+    );
 
+    if (!cartItem) {
+      return;
+    }
 
+    try {
+      await axios.delete(
+        `http://localhost:5047/api/Perfume2Users/cart/${loginuser.id}/${Pid}`,
+      );
 
+      setCartItems((prevCart) =>
+        prevCart.filter((item) => Number(item.productId) !== Number(Pid)),
+      );
+
+      setloginuser((prev) => ({
+        ...prev,
+        cart: prev.cart.filter(
+          (item: any) => Number(item.productId) !== Number(Pid),
+        ),
+      }));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+const specialcartItem = cartItems.find(
+                (item) => Number(item.productId) === Number(perfumes[3]?.id),
+              );
+
+              // =========================
+// ADD TO WISHLIST
+// =========================
+const handleAddToWishlist = async (productId: number) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    navigate("/login");
+    return;
+  }
+
+  if (!loginuser.id) {
+    return;
+  }
+
+  // Already in wishlist
+  const alreadyExists = wishlistItems.some(
+    (item) => Number(item.productId) === Number(productId)
+  );
+
+  if (alreadyExists) {
+    return;
+  }
+
+  try {
+    const response = await axios.post(
+      "http://localhost:5047/api/Perfume2Users/add-wishlist",
+      {
+        userId: Number(loginuser.id),
+        productId: Number(productId),
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.log("Wishlist added:", response.data);
+
+    // Update heart immediately
+    setWishlistItems((prev) => [
+      ...prev,
+      {
+        id: response.data.id,
+        userId: Number(loginuser.id),
+        productId: Number(productId),
+      },
+    ]);
+  } catch (error) {
+    console.log("Add wishlist error:", error);
+  }
+};
   return (
     <div className="dark-shop">
       <style>{`
@@ -755,7 +944,13 @@ function Home() {
           margin-top: auto;
           padding-top: 25px;
         }
-
+.quantity-number {
+  flex: 1;
+  text-align: center;
+  color: #eee;
+  font-size: 12px;
+  font-weight: 600;
+}
         .user-drawer-footer button {
           display: flex;
           align-items: center;
@@ -1210,13 +1405,8 @@ function Home() {
   color: #000 !important;
 }
 
-.quantity-number {
-  flex: 1;
-  text-align: center;
-  color: #eee;
-  font-size: 12px;
-  font-weight: 600;
-}
+
+
 
         .product-buttons button {
           flex: 1;
@@ -1920,9 +2110,18 @@ function Home() {
               className="header-icon"
               onClick={() => navigate("/cart")}
             >
-              <Badge badgeContent={cart} color="warning">
-                <ShoppingBagOutlinedIcon />
-              </Badge>
+              {loginuser.cart.length == 0 ? (
+                <Badge color="warning">
+                  <ShoppingBagOutlinedIcon />
+                </Badge>
+              ) : (
+                <Badge
+                  badgeContent={loginuser.cart.length || ""}
+                  color="warning"
+                >
+                  <ShoppingBagOutlinedIcon />
+                </Badge>
+              )}
             </IconButton>
           </div>
         </Toolbar>
@@ -2099,103 +2298,116 @@ function Home() {
           </div>
 
           <div className="row g-4">
-           {productsslice.map((product) => {
-  const cartItem = cartItems.find(
-    (item) => item.productId === product.id
-  );
+            {productsslice.map((product) => {
+              const cartItem = cartItems.find(
+                (item) => Number(item.productId) === Number(product.id),
+              );
+              return (
+                <div className="col-6 col-md-4 col-lg-3" key={product.id}>
+                  <div className="product-card">
+                    <div className="product-image-wrap">
+                      <div className="product-actions">
+                        <button
+  className="action-btn"
+  onClick={() => handleAddToWishlist(product.id)}
+>
+  {wishlistItems.some(
+    (item) => Number(item.productId) === Number(product.id)
+  ) ? (
+    <FavoriteIcon
+      sx={{
+        fontSize: 17,
+        color: "#c5a46d",
+      }}
+    />
+  ) : (
+    <FavoriteBorderIcon
+      sx={{
+        fontSize: 17,
+      }}
+    />
+  )}
+</button>
+                      </div>
 
-  return (
-    <div className="col-6 col-md-4 col-lg-3" key={product.id}>
-      <div className="product-card">
+                      <img src={product.imageUrl} alt={product.title} />
+                    </div>
 
-        <div className="product-image-wrap">
-          <div className="product-actions">
-            <button className="action-btn">
-              <FavoriteBorderIcon
-                sx={{
-                  fontSize: 17,
-                }}
-              />
-            </button>
-          </div>
+                    <div className="product-info">
+                      <div className="rating-brand">
+                        <div>
+                          <span className="rating">★★★★★</span>
 
-          <img
-            src={product.imageUrl}
-            alt={product.title}
-          />
-        </div>
+                          <span className="rating-value">
+                            ({product.rating})
+                          </span>
+                        </div>
 
-        <div className="product-info">
+                        <div className="product-brand">{product.brand}</div>
+                      </div>
 
-          <div className="rating-brand">
-            <div>
-              <span className="rating">★★★★★</span>
+                      <div className="product-name">{product.title}</div>
 
-              <span className="rating-value">
-                ({product.rating})
-              </span>
-            </div>
+                      <div className="product-price">
+                        {product.oldPrice && (
+                          <span className="old-price">
+                            $ {product.oldPrice}
+                          </span>
+                        )}
+                        $ {product.price}
+                      </div>
 
-            <div className="product-brand">
-              {product.brand}
-            </div>
-          </div>
+                      <div className="product-buttons">
+                        {cartItem ? (
+                          <div className="quantity-control">
+                            {cartItem.quantity == 1 ? (
+                              <button
+                                className="quantity-btn"
+                                onClick={() => handleDelete(product.id)}
+                              >
+                                −
+                              </button>
+                            ) : (
+                              <button
+                                className="quantity-btn"
+                                onClick={() => handleDecrease(product.id)}
+                              >
+                                −
+                              </button>
+                            )}
 
-          <div className="product-name">
-            {product.title}
-          </div>
+                            <span className="quantity-number">
+                              {cartItem.quantity}
+                            </span>
 
-          <div className="product-price">
-            {product.oldPrice && (
-              <span className="old-price">
-                $ {product.oldPrice}
-              </span>
-            )}
+                            <button
+                              className="quantity-btn"
+                              onClick={() => handleIncrease(product.id)}
+                            >
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="add-cart"
+                            onClick={() => handleAddToCart(product.id)}
+                          >
+                            ADD TO CART
+                          </button>
+                        )}
 
-            $ {product.price}
-          </div>
-
-          <div className="product-buttons">
-
-            {cartItem ? (
-              <div className="quantity-control">
-
-                <button className="quantity-btn">
-                  −
-                </button>
-
-                <span className="quantity-number">
-                  {cartItem.quantity}
-                </span>
-
-                <button className="quantity-btn">
-                  +
-                </button>
-
-              </div>
-            ) : (
-              <button
-                className="add-cart"
-                onClick={() => handleAddToCart(product.id)}
-              >
-                ADD TO CART
-              </button>
-            )}
-
-            <button
-              className="buy-now"
-              onClick={() => navigate(`/buy/${product.id}`)}
-            >
-              BUY NOW
-            </button>
-
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
-})}
+                        <button
+                          className="buy-now"
+                          onClick={() => navigate(`/buy/${product.id}`)}
+                        >
+                          BUY NOW
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -2252,13 +2464,52 @@ function Home() {
                   </div>
                 </div>
 
-                <Button
+                  {specialcartItem ? (
+                          <div className="quantity-control">
+                            {specialcartItem.quantity == 1 ? (
+                              <button
+                                className="quantity-btn"
+                                onClick={() => handleDelete(perfumes[3].id)}
+                              >
+                                −
+                              </button>
+                            ) : (
+                              <button
+                                className="quantity-btn"
+                                onClick={() => handleDecrease(perfumes[3].id)}
+                              >
+                                −
+                              </button>
+                            )}
+
+                            <span className="quantity-number">
+                              {specialcartItem.quantity}
+                            </span>
+
+                            <button
+                              className="quantity-btn"
+                              onClick={() => handleIncrease(perfumes[3].id)}
+                            >
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                           <Button
                   className="gold-btn"
-                  onClick={addCart}
+                  onClick={()=>handleAddToCart(perfumes[3].id)}
                   endIcon={<ShoppingBagOutlinedIcon />}
                 >
                   ADD TO CART — $49
                 </Button>
+                        )}
+
+                {/* <Button
+                  className="gold-btn"
+                  onClick={()=>handleAddToCart(perfumes[3].id)}
+                  endIcon={<ShoppingBagOutlinedIcon />}
+                >
+                  ADD TO CART — $49
+                </Button> */}
               </div>
             </div>
           </div>
