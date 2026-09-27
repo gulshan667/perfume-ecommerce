@@ -70,7 +70,7 @@ function Cart() {
         );
 
         const productData = responses.map((response, index) => ({
-          ...responses[index].data,
+          ...response.data,
           quantity: cart[index].quantity,
         }));
 
@@ -109,7 +109,7 @@ function Cart() {
     }
   };
 
-  const handleIncrease = async (Pid) => {
+  const handleIncrease = async (Pid: number) => {
     try {
       await axios.patch(
         `http://localhost:5047/api/Perfume2Users/cart-increase-quantity?id=${cart[0].userId}&pId=${Pid}`,

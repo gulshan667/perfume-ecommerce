@@ -37,11 +37,6 @@ const Login = () => {
 
       // Get JWT token from API
       const token = response.data.token;
-      const senduser ={
-        name:response.data.name,
-        email:response.data.email
-      }
-
       // Save token in browser
       localStorage.setItem("token", token);
 
