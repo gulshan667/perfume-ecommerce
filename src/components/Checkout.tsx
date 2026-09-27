@@ -77,7 +77,8 @@ const Cart = (location.state?.Cart as cartItem[]) || [];
     },
   ];
 
-
+ 
+  
 //   <<--------------get product by id--------------->
  const [perfumes, setperfumes] = useState<any[]>([]);
 
