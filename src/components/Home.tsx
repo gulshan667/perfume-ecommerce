@@ -52,10 +52,24 @@ export interface Perfume {
   isLatest: number;
 }
 
+interface CartItem {
+  id: number;
+  userId: number;
+  productId: number;
+  quantity: number;
+}
+
+interface LoginUser {
+  id: string;
+  name: string;
+  email: string;
+  cart: CartItem[];
+}
+
 function Home() {
   const [perfumes, setperfumes] = useState<Perfume[]>([]);
   const [activeTab, setActiveTab] = useState("Latest Products");
-  const [cart, setCart] = useState(0);
+  const [cart] = useState(0);
   const [wishlistItems, setWishlistItems] = useState<any[]>([]);
 
   // Mobile drawer
@@ -73,7 +87,7 @@ function Home() {
 
   const [cartItems, setCartItems] = useState<any[]>([]);
 
-  const [loginuser, setloginuser] = useState({
+  const [loginuser, setloginuser] = useState<LoginUser>({
     id: "",
     name: "",
     email: "",
