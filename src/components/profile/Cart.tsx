@@ -12,10 +12,9 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import axios from "axios";
 
-
- type cartItem = {
-  id:number;
-  userId:number;
+type cartItem = {
+  id: number;
+  userId: number;
   productId: number;
   quantity: number;
 };
@@ -23,148 +22,131 @@ import axios from "axios";
 function Cart() {
   const navigate = useNavigate();
 
- 
-
   const [coupon, setCoupon] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
   ////<------------------get cart from api----------------->
-   
-  
+
   const [cart, setcart] = useState<cartItem[]>([]);
-  
-     useEffect(() => {
-      const getUser = async () => {
-        const token = localStorage.getItem("token");
-  
-        if (!token) {
-          return;
-        }
-  
-        try {
-          const response = await axios.get(
-            "http://localhost:5047/api/Perfume2Users/me",
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+
+  useEffect(() => {
+    const getUser = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          "http://localhost:5047/api/Perfume2Users/me",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
             },
-          );
-  
-            setcart(response.data.cart);
-        } catch (error) {
-          console.log(error);
-        }
-      };
-  
-      getUser();
-    }, []);
-  
-    console.log(cart)
-  
-    //---------------GEt product by id---------->
-    const [products, setProducts] = useState<any[]>([]);
-  
+          },
+        );
+
+        setcart(response.data.cart);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    getUser();
+  }, []);
+
+  console.log(cart);
+
+  //---------------GEt product by id---------->
+  const [products, setProducts] = useState<any[]>([]);
+
   useEffect(() => {
     const getProducts = async () => {
       try {
         const responses = await Promise.all(
           cart.map((item) =>
-            axios.get(
-              `http://localhost:5047/api/Perfume2/${item.productId}`
-            )
-          )
+            axios.get(`http://localhost:5047/api/Perfume2/${item.productId}`),
+          ),
         );
-  
+
         const productData = responses.map((response, index) => ({
           ...responses[index].data,
           quantity: cart[index].quantity,
         }));
-  
+
         setProducts(productData);
-  
       } catch (error) {
         console.log(error);
       }
     };
-  
+
     if (cart.length > 0) {
       getProducts();
     }
   }, [cart]);
 
-const handleDecrease =async (Pid : number)=>{
-  try {
-    await axios.patch(`http://localhost:5047/api/Perfume2Users/cart-decrease-quantity?id=${cart[0].userId}&pId=${Pid}`);
-    // Update quantity  on screen
-    setcart(prevCart =>
-      prevCart.map(item =>
-        item.productId === Pid
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      )
-    );
+  const handleDecrease = async (Pid: number) => {
+    try {
+      await axios.patch(
+        `http://localhost:5047/api/Perfume2Users/cart-decrease-quantity?id=${cart[0].userId}&pId=${Pid}`,
+      );
+      // Update quantity  on screen
+      setcart((prevCart) =>
+        prevCart.map((item) =>
+          item.productId === Pid
+            ? { ...item, quantity: item.quantity - 1 }
+            : item,
+        ),
+      );
 
-    setProducts(prevProducts =>
-      prevProducts.map(item =>
-        item.id === Pid
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      )
-    );
-  } catch (error) {
-    console.log(error)
-  }
-}
+      setProducts((prevProducts) =>
+        prevProducts.map((item) =>
+          item.id === Pid ? { ...item, quantity: item.quantity - 1 } : item,
+        ),
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-const handleIncrease =async (Pid)=>{
-  try {
-    await axios.patch(`http://localhost:5047/api/Perfume2Users/cart-increase-quantity?id=${cart[0].userId}&pId=${Pid}`);
-    // Update quantity immediately on screen
-    setcart(prevCart =>
-      prevCart.map(item =>
-        item.productId === Pid
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      )
-    );
+  const handleIncrease = async (Pid) => {
+    try {
+      await axios.patch(
+        `http://localhost:5047/api/Perfume2Users/cart-increase-quantity?id=${cart[0].userId}&pId=${Pid}`,
+      );
+      // Update quantity immediately on screen
+      setcart((prevCart) =>
+        prevCart.map((item) =>
+          item.productId === Pid
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
+        ),
+      );
 
-    setProducts(prevProducts =>
-      prevProducts.map(item =>
-        item.id === Pid
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      )
-    );
-  } catch (error) {
-    console.log(error)
-  }
-}
-
- 
+      setProducts((prevProducts) =>
+        prevProducts.map((item) =>
+          item.id === Pid ? { ...item, quantity: item.quantity + 1 } : item,
+        ),
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const subtotal = products.reduce(
-    (total, item) =>
-      total + item.price * item.quantity,
-    0
+    (total, item) => total + item.price * item.quantity,
+    0,
   );
 
-  const shipping =subtotal==0? 0 : subtotal >= 100  ? 0 : 8;
+  const shipping = subtotal == 0 ? 0 : subtotal >= 100 ? 0 : 8;
 
-  const discount = couponApplied
-    ? Math.round(subtotal * 0.1)
-    : 0;
+  const discount = couponApplied ? Math.round(subtotal * 0.1) : 0;
 
   const total = subtotal + shipping - discount;
 
-  const freeShippingRemaining = Math.max(
-    0,
-    100 - subtotal
-  );
+  const freeShippingRemaining = Math.max(0, 100 - subtotal);
 
-  const shippingProgress = Math.min(
-    100,
-    (subtotal / 100) * 100
-  );
+  const shippingProgress = Math.min(100, (subtotal / 100) * 100);
 
   const applyCoupon = () => {
     if (coupon.trim().toUpperCase() === "NOIR10") {
@@ -172,25 +154,24 @@ const handleIncrease =async (Pid)=>{
     }
   };
 
-  const handleDelete = async (PId:number)=>{
-     try {
-      axios.delete(`http://localhost:5047/api/Perfume2Users/cart/${cart[0].userId}/${PId}`);
+  const handleDelete = async (PId: number) => {
+    try {
+      axios.delete(
+        `http://localhost:5047/api/Perfume2Users/cart/${cart[0].userId}/${PId}`,
+      );
 
       // Remove immediately from cart state
-    setcart(prevCart =>
-      prevCart.filter(item => item.productId !== PId)
-    );
+      setcart((prevCart) => prevCart.filter((item) => item.productId !== PId));
 
-    // Remove immediately from products state
-    setProducts(prevProducts =>
-      prevProducts.filter(product => product.id !== PId)
-    );
-     } catch (error) {
-      console.log(error)
-     }
-  }
-
-  
+      // Remove immediately from products state
+      setProducts((prevProducts) =>
+        prevProducts.filter((product) => product.id !== PId),
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  };
+ console.log(cart)
   return (
     <div className="cart-page">
       <style>{`
@@ -1036,30 +1017,20 @@ const handleIncrease =async (Pid)=>{
     PREMIUM NOIR HEADER
 ========================================= */}
 
-<header className="cart-header">
+      <header className="cart-header">
+        <div className="cart-header-inner">
+          {/* NOIR LOGO */}
+          <button className="cart-logo" onClick={() => navigate("/")}>
+            NOIR<span>.</span>
+          </button>
 
-  <div className="cart-header-inner">
-
-    {/* NOIR LOGO */}
-    <button
-      className="cart-logo"
-      onClick={() => navigate("/")}
-    >
-      NOIR<span>.</span>
-    </button>
-
-    {/* RIGHT SIDE */}
-    <button
-      className="cart-back"
-      onClick={() => navigate("/")}
-    >
-      <ArrowBackIcon sx={{ fontSize: 15 }} />
-      CONTINUE SHOPPING
-    </button>
-
-  </div>
-
-</header>
+          {/* RIGHT SIDE */}
+          <button className="cart-back" onClick={() => navigate("/")}>
+            <ArrowBackIcon sx={{ fontSize: 15 }} />
+            CONTINUE SHOPPING
+          </button>
+        </div>
+      </header>
 
       {/* ====================================
           HERO
@@ -1067,10 +1038,7 @@ const handleIncrease =async (Pid)=>{
 
       <section className="cart-hero">
         <div className="cart-container">
-
-          <div className="cart-eyebrow">
-            NOIR • COLLECTION
-          </div>
+          <div className="cart-eyebrow">NOIR • COLLECTION</div>
 
           <h1 className="cart-title">
             YOUR <span>CART</span>
@@ -1079,7 +1047,6 @@ const handleIncrease =async (Pid)=>{
           <p className="cart-subtitle">
             Curated fragrances, selected for your signature.
           </p>
-
         </div>
       </section>
 
@@ -1089,10 +1056,8 @@ const handleIncrease =async (Pid)=>{
 
       <main className="cart-main">
         <div className="cart-container">
-
           {cart.length === 0 ? (
             <div className="empty-cart">
-
               <div className="empty-icon">
                 <ShoppingBagOutlinedIcon />
               </div>
@@ -1102,150 +1067,91 @@ const handleIncrease =async (Pid)=>{
               </h2>
 
               <p>
-                Discover your next signature fragrance and
-                add something exceptional to your collection.
+                Discover your next signature fragrance and add something
+                exceptional to your collection.
               </p>
 
-              <button
-                className="shop-btn"
-                onClick={() => navigate("/search")}
-              >
+              <button className="shop-btn" onClick={() => navigate("/search")}>
                 EXPLORE COLLECTION
               </button>
-
             </div>
           ) : (
             <div className="cart-grid">
-
               {/* ====================================
                   LEFT
               ==================================== */}
 
               <div className="cart-left">
-
                 <div className="cart-heading-row">
+                  <h2 className="cart-heading">Your Selection</h2>
 
-                  <h2 className="cart-heading">
-                    Your Selection
-                  </h2>
-
-                  <div className="cart-count">
-                    {products.length}
-                    {" "}
-                    ITEMS
-                  </div>
-
+                  <div className="cart-count">{products.length} ITEMS</div>
                 </div>
 
                 {products.map((item) => (
-                  <div
-                    className="cart-item"
-                    key={item.id}
-                  >
-
+                  <div className="cart-item" key={item.id}>
                     <div className="cart-item-image">
-                      <img
-                        src={item.imageUrl}
-                        alt={item.title}
-                      />
+                      <img src={item.imageUrl} alt={item.title} />
                     </div>
 
                     <div className="cart-item-info">
+                      <div className="cart-brand">{item.brand}</div>
 
-                      <div className="cart-brand">
-                        {item.brand}
-                      </div>
-
-                      <div className="cart-item-title">
-                        {item.title}
-                      </div>
+                      <div className="cart-item-title">{item.title}</div>
 
                       <div className="cart-size">
                         {item.sizeML} ML • EAU DE PARFUM
                       </div>
 
-                      <div className="cart-rating">
-                        ★★★★★
-                      </div>
+                      <div className="cart-rating">★★★★★</div>
 
                       <div className="cart-item-bottom">
-
                         <div className="cart-price-box">
-
-                          <span className="cart-price">
-                            $ {item.price}
-                          </span>
+                          <span className="cart-price">$ {item.price}</span>
 
                           {item.oldPrice && (
                             <span className="cart-old-price">
                               $ {item.oldPrice}
                             </span>
                           )}
-
                         </div>
 
                         <div className="quantity-box">
-
-                            {item.quantity<=1?<button
-                            disabled
-                          >
-                            −
-                          </button> 
-                          : 
-                          <button
-                            onClick={() =>
-                              handleDecrease(item.id)
-                              
-                            }
-                          >
-                            −
-                          </button> }
-                          
+                          {item.quantity <= 1 ? (
+                            <button disabled>−</button>
+                          ) : (
+                            <button onClick={() => handleDecrease(item.id)}>
+                              −
+                            </button>
+                          )}
 
                           <span className="quantity-number">
                             {item.quantity}
                           </span>
 
-                          <button
-                           onClick={() =>
-                              handleIncrease(item.id)
-                              
-                            }
-                          >
+                          <button onClick={() => handleIncrease(item.id)}>
                             +
                           </button>
-
                         </div>
-
                       </div>
-
                     </div>
 
                     <div className="item-actions">
-
                       <button
                         className="item-action-btn"
                         title="Move to wishlist"
                       >
-                        <FavoriteBorderIcon
-                          sx={{ fontSize: 17 }}
-                        />
+                        <FavoriteBorderIcon sx={{ fontSize: 17 }} />
                       </button>
 
                       <button
                         className="item-action-btn delete"
                         title="Remove item"
-                        onClick={() =>
-                          handleDelete(item.id)
-                        }
+                        onClick={() => handleDelete(item.id)}
                       >
-                        <DeleteIcon
-                          sx={{ fontSize: 18 }}
-                        />
+                        <DeleteIcon sx={{ fontSize: 18 }} />
                       </button>
-
                     </div>
-
                   </div>
                 ))}
 
@@ -1253,12 +1159,9 @@ const handleIncrease =async (Pid)=>{
                   className="continue-shopping"
                   onClick={() => navigate("/")}
                 >
-                  <ArrowBackIcon
-                    sx={{ fontSize: 16 }}
-                  />
+                  <ArrowBackIcon sx={{ fontSize: 16 }} />
                   CONTINUE SHOPPING
                 </button>
-
               </div>
 
               {/* ====================================
@@ -1266,10 +1169,7 @@ const handleIncrease =async (Pid)=>{
               ==================================== */}
 
               <aside className="summary-card">
-
-                <div className="summary-small">
-                  NOIR CHECKOUT
-                </div>
+                <div className="summary-small">NOIR CHECKOUT</div>
 
                 <h2 className="summary-title">
                   ORDER <span>SUMMARY</span>
@@ -1282,28 +1182,20 @@ const handleIncrease =async (Pid)=>{
 
                 <div className="summary-row">
                   <span>Shipping</span>
-                  <strong>
-                    {shipping === 0
-                      ? "FREE"
-                      : `$ ${shipping}`}
-                  </strong>
+                  <strong>{shipping === 0 ? "FREE" : `$ ${shipping}`}</strong>
                 </div>
 
                 {couponApplied && (
                   <div className="summary-row discount">
                     <span>NOIR10 Discount</span>
-                    <strong>
-                      − $ {discount}
-                    </strong>
+                    <strong>− $ {discount}</strong>
                   </div>
                 )}
 
                 {/* SHIPPING */}
 
                 <div className="shipping-box">
-
                   <div className="shipping-top">
-
                     <LocalShippingOutlinedIcon />
 
                     <span>
@@ -1311,48 +1203,34 @@ const handleIncrease =async (Pid)=>{
                         ? "Congratulations. You unlocked free shipping."
                         : `Add $${freeShippingRemaining} more for FREE shipping.`}
                     </span>
-
                   </div>
 
                   <div className="shipping-progress">
-
                     <div
                       className="shipping-progress-fill"
                       style={{
                         width: `${shippingProgress}%`,
                       }}
                     />
-
                   </div>
-
                 </div>
 
                 {/* COUPON */}
 
                 <div className="coupon-box">
-
                   <input
                     type="text"
                     placeholder="PROMO CODE"
                     value={coupon}
-                    onChange={(e) =>
-                      setCoupon(e.target.value)
-                    }
+                    onChange={(e) => setCoupon(e.target.value)}
                   />
 
-                  <button
-                    onClick={applyCoupon}
-                  >
-                    APPLY
-                  </button>
-
+                  <button onClick={applyCoupon}>APPLY</button>
                 </div>
 
                 {couponApplied && (
                   <div className="coupon-applied">
-                    <CheckCircleIcon
-                      sx={{ fontSize: 15 }}
-                    />
+                    <CheckCircleIcon sx={{ fontSize: 15 }} />
                     NOIR10 APPLIED — 10% OFF
                   </div>
                 )}
@@ -1360,15 +1238,11 @@ const handleIncrease =async (Pid)=>{
                 {/* TOTAL */}
 
                 <div className="summary-total">
-
-                  <span>
-                    TOTAL
-                  </span>
+                  <span>TOTAL</span>
 
                   <span className="summary-total-price">
                     $ {total.toFixed(2)}
                   </span>
-
                 </div>
 
                 {/* CHECKOUT */}
@@ -1376,7 +1250,11 @@ const handleIncrease =async (Pid)=>{
                 <button
                   className="checkout-btn"
                   onClick={() =>
-                    navigate("/checkout")
+                    navigate("/checkout", {
+                      state: {
+                        Cart: cart,
+                      },
+                    })
                   }
                 >
                   PROCEED TO CHECKOUT
@@ -1386,7 +1264,6 @@ const handleIncrease =async (Pid)=>{
                 {/* TRUST */}
 
                 <div className="trust-grid">
-
                   <div className="trust-box">
                     <SecurityOutlinedIcon />
                     <span>
@@ -1413,17 +1290,12 @@ const handleIncrease =async (Pid)=>{
                       PROTECTED
                     </span>
                   </div>
-
                 </div>
-
               </aside>
-
             </div>
           )}
-
         </div>
       </main>
-
     </div>
   );
 }

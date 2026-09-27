@@ -8,6 +8,8 @@ import ResetPassword from "./components/ResetPassword"
 import Cart from "./components/profile/Cart"
 import BlogDetails from "./components/BlogDetails"
 import Wishlist from "./components/profile/Wishlist"
+import Order from "./components/profile/Order"
+import Checkout from "./components/Checkout"
 // import Home from "./components/Home"
 // import Design from "./Design"
 
@@ -29,6 +31,8 @@ const App = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/wishlist" element = { <Wishlist/>}/>
+        <Route path="/orders" element = { <Order/>}/>
+        <Route path="/checkout" element = { <Checkout/>}/>
 
         
         {/* <Route path="/" element={<Product/>} /> */}
