@@ -14,16 +14,6 @@ import { useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
 
-interface CheckoutProduct {
-  id: number;
-  brand: string;
-  title: string;
-  size: string;
-  quantity: number;
-  price: number;
-  image: string;
-}
-
 type cartItem = {
   id: number;
   userId: number;
@@ -54,30 +44,6 @@ const Cart = (location.state?.Cart as cartItem[]) || [];
     pincode: "201306",
   });
 
-  const products: CheckoutProduct[] = [
-    {
-      id: 1,
-      brand: "NOIR",
-      title: "NOIR Intense EDP",
-      size: "100 ML",
-      quantity: 1,
-      price: 89,
-      image:
-        "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=500&q=90",
-    },
-    {
-      id: 2,
-      brand: "VELVET",
-      title: "VELVET Rose",
-      size: "50 ML",
-      quantity: 2,
-      price: 65,
-      image:
-        "https://images.unsplash.com/photo-1547887538-e3a2f32cb1cc?auto=format&fit=crop&w=500&q=90",
-    },
-  ];
-
-
 //   <<--------------get product by id--------------->
  const [perfumes, setperfumes] = useState<any[]>([]);
 
@@ -91,7 +57,7 @@ const Cart = (location.state?.Cart as cartItem[]) || [];
         );
 
         const productData = responses.map((response, index) => ({
-          ...responses[index].data,
+          ...response.data,
           quantity: Cart[index].quantity,
         }));
 
