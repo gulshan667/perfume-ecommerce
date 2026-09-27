@@ -138,19 +138,19 @@ const Cart = (location.state?.Cart as cartItem[]) || [];
   };
 
   const placeOrder = () => {
-    if (
-      !form.firstName ||
-      !form.lastName ||
-      !form.email ||
-      !form.phone ||
-      !form.address ||
-      !form.city ||
-      !form.state ||
-      !form.pincode
-    ) { 
-      alert("Please fill all required details.");
-      return;
-    }
+    // if (
+    //   !form.firstName ||
+    //   !form.lastName ||
+    //   !form.email ||
+    //   !form.phone ||
+    //   !form.address ||
+    //   !form.city ||
+    //   !form.state ||
+    //   !form.pincode
+    // ) { 
+    //   alert("Please fill all required details.");
+    //   return;
+    // }
 
     alert("Order placed successfully!");
     navigate("/order");
