@@ -17,7 +17,6 @@ import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
-import PersonIcon from "@mui/icons-material/Person";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
@@ -44,6 +43,21 @@ export interface Perfume {
   isBestSelling: boolean;
   isLatest: boolean;
 }
+type CartItem = {
+  id: number;
+  userId: number;
+  productId: number;
+  quantity: number;
+};
+
+type LoginUser = {
+  id: string;
+  name: string;
+  email: string;
+  cart: CartItem[];
+};
+
+
 
 function SearchResults() {
   const [perfumes, setperfumes] = useState<Perfume[]>([]);
@@ -53,7 +67,6 @@ function SearchResults() {
   const initialQuery = searchParams.get("q") || "";
 
   const [search, setSearch] = useState(initialQuery);
-  const [cart, setCart] = useState(0);
   const [drawer, setDrawer] = useState(false);
   const [sortBy, setSortBy] = useState("featured");
 
@@ -71,12 +84,12 @@ function SearchResults() {
   const [showSubscribed, setShowSubscribed] = useState(false);
   const [cartItems, setCartItems] = useState<any[]>([]);
 
-  const [loginuser, setloginuser] = useState({
-    id: "",
-    name: "",
-    email: "",
-    cart: [],
-  });
+ const [loginuser, setloginuser] = useState<LoginUser>({
+  id: "",
+  name: "",
+  email: "",
+  cart: [],
+});
 
   ///api
   useEffect(() => {
@@ -130,14 +143,14 @@ function SearchResults() {
         item.price < maxPrice &&
         (categories.length === 0 || categories.includes(item.gender)) &&
         (brands.length === 0 || brands.includes(item.brand)) &&
-        (types.length === 0 || types.includes(item.fragranceType)) &&
+(types.length === 0 || types.includes(item.fragranceType ?? "")) &&
         (ratings.length === 0 ||
           ratings.some((rating) => item.rating >= parseFloat(rating))) &&
         (sizes.length === 0 ||
           sizes.map((item2) => parseFloat(item2)).includes(item.sizeML)) &&
         (discounts.length === 0 ||
           discounts.some(
-            (discount) => item.salePercentage >= parseFloat(discount),
+            (discount) => (item.salePercentage ?? 0) >= parseFloat(discount)
           )) &&
         (search === "" ||
           item.title == search ||
@@ -160,9 +173,7 @@ function SearchResults() {
   );
   console.log(lenth);
 
-  const addCart = () => {
-    setCart((value) => value + 1);
-  };
+ 
 
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
