@@ -38,7 +38,7 @@ function Cart() {
 
       try {
         const response = await axios.get(
-          "http://localhost:5047/api/Perfume2Users/me",
+          "http://noirperfume-api.runasp.net/api/Perfume2Users/me",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -65,7 +65,7 @@ function Cart() {
       try {
         const responses = await Promise.all(
           cart.map((item) =>
-            axios.get(`http://localhost:5047/api/Perfume2/${item.productId}`),
+            axios.get(`http://noirperfume-api.runasp.net/api/Perfume2/${item.productId}`),
           ),
         );
 
@@ -88,7 +88,7 @@ function Cart() {
   const handleDecrease = async (Pid: number) => {
     try {
       await axios.patch(
-        `http://localhost:5047/api/Perfume2Users/cart-decrease-quantity?id=${cart[0].userId}&pId=${Pid}`,
+        `http://noirperfume-api.runasp.net/api/Perfume2Users/cart-decrease-quantity?id=${cart[0].userId}&pId=${Pid}`,
       );
       // Update quantity  on screen
       setcart((prevCart) =>
@@ -112,7 +112,7 @@ function Cart() {
   const handleIncrease = async (Pid:number) => {
     try {
       await axios.patch(
-        `http://localhost:5047/api/Perfume2Users/cart-increase-quantity?id=${cart[0].userId}&pId=${Pid}`,
+        `http://noirperfume-api.runasp.net/api/Perfume2Users/cart-increase-quantity?id=${cart[0].userId}&pId=${Pid}`,
       );
       // Update quantity immediately on screen
       setcart((prevCart) =>
@@ -157,7 +157,7 @@ function Cart() {
   const handleDelete = async (PId: number) => {
     try {
       axios.delete(
-        `http://localhost:5047/api/Perfume2Users/cart/${cart[0].userId}/${PId}`,
+        `http://noirperfume-api.runasp.net/api/Perfume2Users/cart/${cart[0].userId}/${PId}`,
       );
 
       // Remove immediately from cart state

@@ -44,7 +44,7 @@ useEffect(() => {
 
   try {
      const response = await axios.patch(
-      "http://localhost:5047/api/Perfume2Users/reset-password",
+      "http://noirperfume-api.runasp.net/api/Perfume2Users/reset-password",
       {
         Token: token,
         NewPassword: password,

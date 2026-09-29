@@ -32,7 +32,7 @@ const Product = () => {
 
   useEffect(() => {
     const api = async () => {
-      const response = await axios.get("http://localhost:5047/api/Perfume");
+      const response = await axios.get("http://noirperfume-api.runasp.net/api/Perfume");
       setperfumes(response.data);
     };
 

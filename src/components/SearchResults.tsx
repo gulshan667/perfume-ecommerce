@@ -94,7 +94,7 @@ function SearchResults() {
   ///api
   useEffect(() => {
     const api = async () => {
-      const response = await axios.get("http://localhost:5047/api/Perfume2");
+      const response = await axios.get("http://noirperfume-api.runasp.net/api/Perfume2");
       setperfumes(response.data);
     };
     api();
@@ -195,7 +195,7 @@ function SearchResults() {
 
       try {
         const response = await axios.get(
-          "http://localhost:5047/api/Perfume2Users/me",
+          "http://noirperfume-api.runasp.net/api/Perfume2Users/me",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -234,7 +234,7 @@ function SearchResults() {
 
     try {
       const response = await axios.post(
-        "http://localhost:5047/api/Perfume2Users/add-cart",
+        "http://noirperfume-api.runasp.net/api/Perfume2Users/add-cart",
         {
           userId: Number(loginuser.id),
           productId: productId,
@@ -295,7 +295,7 @@ function SearchResults() {
   const handleIncrease = async (Pid: number) => {
     try {
       await axios.patch(
-        `http://localhost:5047/api/Perfume2Users/cart-increase-quantity?id=${loginuser.id}&pId=${Pid}`,
+        `http://noirperfume-api.runasp.net/api/Perfume2Users/cart-increase-quantity?id=${loginuser.id}&pId=${Pid}`,
       );
 
       setCartItems((prevCart) =>
@@ -329,7 +329,7 @@ function SearchResults() {
 
     try {
       await axios.patch(
-        `http://localhost:5047/api/Perfume2Users/cart-decrease-quantity?id=${loginuser.id}&pId=${Pid}`,
+        `http://noirperfume-api.runasp.net/api/Perfume2Users/cart-decrease-quantity?id=${loginuser.id}&pId=${Pid}`,
       );
 
       setCartItems((prevCart) =>
@@ -364,7 +364,7 @@ function SearchResults() {
 
     try {
       await axios.delete(
-        `http://localhost:5047/api/Perfume2Users/cart/${loginuser.id}/${Pid}`,
+        `http://noirperfume-api.runasp.net/api/Perfume2Users/cart/${loginuser.id}/${Pid}`,
       );
 
       setCartItems((prevCart) =>
