@@ -66,7 +66,7 @@ const Cart = (location.state?.Cart as cartItem[]) || [];
       try {
         const responses = await Promise.all(
           Cart.map((item) =>
-            axios.get(`http://noirperfume-api.runasp.net/api/Perfume2/${item.productId}`),
+            axios.get(`https://noirperfume-api.runasp.net/api/Perfume2/${item.productId}`),
           ),
         );
 

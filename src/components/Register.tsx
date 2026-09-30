@@ -45,7 +45,7 @@ const Register = () => {
     
     try {
       const response = await axios.post(
-        "http://noirperfume-api.runasp.net/api/Perfume2Users/AddUser",
+        "https://noirperfume-api.runasp.net/api/Perfume2Users/AddUser",
           {
         name: formdata.fullname,
         email: formdata.email,

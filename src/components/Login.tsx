@@ -28,7 +28,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        "http://noirperfume-api.runasp.net/api/Perfume2Users/login",
+        "https://noirperfume-api.runasp.net/api/Perfume2Users/login",
         {
           email: formdata.email,
           password: formdata.password,

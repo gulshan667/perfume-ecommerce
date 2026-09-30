@@ -43,7 +43,7 @@ const ForgotPassword = () => {
       setLoading(true);
 
       await axios.post(
-        "http://noirperfume-api.runasp.net/api/Perfume2Users/forget-password",
+        "https://noirperfume-api.runasp.net/api/Perfume2Users/forget-password",
         formdata,
       );
       setOtp(["", "", "", "", "", ""]);
@@ -116,7 +116,7 @@ const ForgotPassword = () => {
     };
     try {
       const response = await axios.post(
-        "http://noirperfume-api.runasp.net/api/Perfume2Users/verify-otp",
+        "https://noirperfume-api.runasp.net/api/Perfume2Users/verify-otp",
         request,
       );
       const resetToken = response.data.resetToken;
@@ -147,7 +147,7 @@ const ForgotPassword = () => {
   const handleresendotp = () => {
     
        axios.post(
-        "http://noirperfume-api.runasp.net/api/Perfume2Users/forget-password",
+        "https://noirperfume-api.runasp.net/api/Perfume2Users/forget-password",
         formdata)
      
     setOtp(["", "", "", "", "", ""]);

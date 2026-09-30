@@ -40,7 +40,7 @@ const Wishlist = () => {
 
       try {
         const response = await axios.get(
-          "http://noirperfume-api.runasp.net/api/Perfume2Users/me",
+          "https://noirperfume-api.runasp.net/api/Perfume2Users/me",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -67,7 +67,7 @@ const Wishlist = () => {
         const responses = await Promise.all(
           wishlist.map((item) =>
             axios.get(
-              `http://noirperfume-api.runasp.net/api/Perfume2/${item.productId}`
+              `https://noirperfume-api.runasp.net/api/Perfume2/${item.productId}`
             )
           )
         );
@@ -108,7 +108,7 @@ const Wishlist = () => {
 
     try {
       const response = await axios.post(
-        "http://noirperfume-api.runasp.net/api/Perfume2Users/add-cart",
+        "https://noirperfume-api.runasp.net/api/Perfume2Users/add-cart",
         {
           userId: Number(wishlistItem.userId),
           productId: Number(productId),
@@ -175,7 +175,7 @@ const Wishlist = () => {
 
     try {
       await axios.patch(
-        `http://noirperfume-api.runasp.net/api/Perfume2Users/cart-increase-quantity?id=${wishlistItem.userId}&pId=${productId}`,
+        `https://noirperfume-api.runasp.net/api/Perfume2Users/cart-increase-quantity?id=${wishlistItem.userId}&pId=${productId}`,
         {},
         {
           headers: {
@@ -231,7 +231,7 @@ const Wishlist = () => {
 
     try {
       await axios.patch(
-        `http://noirperfume-api.runasp.net/api/Perfume2Users/cart-decrease-quantity?id=${wishlistItem.userId}&pId=${productId}`,
+        `https://noirperfume-api.runasp.net/api/Perfume2Users/cart-decrease-quantity?id=${wishlistItem.userId}&pId=${productId}`,
         {},
         {
           headers: {
@@ -277,7 +277,7 @@ const Wishlist = () => {
 
     try {
       await axios.delete(
-        `http://noirperfume-api.runasp.net/api/Perfume2Users/wishlist/${wishlistItem.userId}/${productId}`,
+        `https://noirperfume-api.runasp.net/api/Perfume2Users/wishlist/${wishlistItem.userId}/${productId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
